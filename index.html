@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mappa Elettorale — Municipio 7 Roma | Lista 5 PD</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, #0d3b6e 0%, #1a5c96 100%);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .header-title h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.3px;
+    }
+
+    .header-title p {
+      font-size: 0.75rem;
+      color: #a8d4f0;
+      margin-top: 2px;
+    }
+
+    .header-badge {
+      background: #e63946;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── CONTROLLI ── */
+    .controls {
+      background: #16213e;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #0f3460;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-size: 0.78rem;
+      color: #a8d4f0;
+      white-space: nowrap;
+    }
+
+    select, input[type="text"] {
+      background: #0f3460;
+      border: 1px solid #1a5c96;
+      color: #eee;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      outline: none;
+    }
+
+    select:focus, input:focus {
+      border-color: #4fc3f7;
+    }
+
+    .stat-pill {
+      background: #0f3460;
+      border: 1px solid #1a5c96;
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 0.75rem;
+      color: #a8d4f0;
+    }
+
+    .stat-pill span {
+      color: #4fc3f7;
+      font-weight: 700;
+    }
+
+    /* ── MAPPA ── */
+    #map {
+      flex: 1;
+      width: 100%;
+    }
+
+    /* ── LEGENDA ── */
+    .legend {
+      background: rgba(22, 33, 62, 0.95);
+      border: 1px solid #1a5c96;
+      border-radius: 8px;
+      padding: 10px 14px;
+      min-width: 160px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .legend h4 {
+      font-size: 0.78rem;
+      color: #a8d4f0;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .legend-gradient {
+      width: 100%;
+      height: 14px;
+      border-radius: 3px;
+      background: linear-gradient(to right, #c7e9c0, #006d2c);
+      margin-bottom: 4px;
+    }
+
+    .legend-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #aaa;
+    }
+
+    .legend-section {
+      margin-top: 8px;
+      border-top: 1px solid #1a5c96;
+      padding-top: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: #ccc;
+      margin-bottom: 3px;
+    }
+
+    .legend-dot {
+      width: 14px;
+      height: 4px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ── POPUP ── */
+    .custom-popup .leaflet-popup-content-wrapper {
+      background: #16213e;
+      border: 1px solid #1a5c96;
+      border-radius: 10px;
+      color: #eee;
+      padding: 0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      min-width: 260px;
+    }
+
+    .custom-popup .leaflet-popup-tip {
+      background: #16213e;
+    }
+
+    .custom-popup .leaflet-popup-content {
+      margin: 0;
+    }
+
+    .popup-header {
+      background: linear-gradient(135deg, #0d3b6e, #1a5c96);
+      padding: 10px 14px;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .popup-header .sezione-num {
+      font-size: 0.72rem;
+      color: #a8d4f0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .popup-header .via-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 2px;
+    }
+
+    .popup-header .civici-range {
+      font-size: 0.72rem;
+      color: #c0dff5;
+      margin-top: 2px;
+    }
+
+    .popup-body {
+      padding: 12px 14px;
+    }
+
+    .voti-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #0f3460;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+    }
+
+    .voti-num {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #4fc3f7;
+      line-height: 1;
+    }
+
+    .voti-label {
+      font-size: 0.72rem;
+      color: #a8d4f0;
+      line-height: 1.4;
+    }
+
+    .voti-label strong {
+      color: #fff;
+      display: block;
+      font-size: 0.85rem;
+    }
+
+    .candidati-title {
+      font-size: 0.72rem;
+      color: #a8d4f0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .candidato-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px 0;
+      border-bottom: 1px solid #0f3460;
+      font-size: 0.78rem;
+    }
+
+    .candidato-row:last-child { border-bottom: none; }
+
+    .candidato-nome { color: #ddd; }
+    .candidato-pref {
+      background: #1a5c96;
+      color: #fff;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+    }
+
+    .no-cand {
+      font-size: 0.75rem;
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      padding: 6px 0;
+    }
+
+    /* ── BARRA DI CARICAMENTO ── */
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,15,30,0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      gap: 16px;
+    }
+
+    #loading p {
+      color: #a8d4f0;
+      font-size: 0.9rem;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid #1a5c96;
+      border-top-color: #4fc3f7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RICERCA SEZIONE ── */
+    #search-result {
+      font-size: 0.75rem;
+      color: #4fc3f7;
+      min-width: 80px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- OVERLAY CARICAMENTO -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p id="loading-msg">Caricamento dati elettorali…</p>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-title">
+    <h1>🗺 Mappa Elettorale — Municipio 7 Roma</h1>
+    <p>Viario elettorale per sezione · Elezioni Municipali</p>
+  </div>
+  <div class="header-badge">LISTA 5 — PD</div>
+</header>
+
+<!-- CONTROLLI -->
+<div class="controls">
+  <div class="control-group">
+    <label>Cerca sezione:</label>
+    <input type="text" id="search-sez" placeholder="es. 1050" style="width:90px" />
+    <span id="search-result"></span>
+  </div>
+
+  <div class="control-group">
+    <label>Evidenzia candidato:</label>
+    <select id="cand-filter">
+      <option value="">— tutti —</option>
+    </select>
+  </div>
+
+  <div class="stat-pill">Sezioni: <span id="stat-sezioni">–</span></div>
+  <div class="stat-pill">Strade: <span id="stat-strade">–</span></div>
+  <div class="stat-pill">Voti PD totali: <span id="stat-voti">–</span></div>
+</div>
+
+<!-- MAPPA -->
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<script>
+// ============================================================
+// CONFIGURAZIONE
+// ============================================================
+const GEOJSON_URL   = "data/mappa_elettorale.geojson";
+const CANDIDATI_URL = "data/candidati_lista5.json";
+
+const MAP_CENTER  = [41.885, 12.565];   // Centro Municipio 7 Roma
+const MAP_ZOOM    = 13;
+const WEIGHT_NORM = 3;                  // spessore linea normale
+const WEIGHT_SEL  = 6;                  // spessore linea selezionata
+
+// ============================================================
+// INIZIALIZZA MAPPA
+// ============================================================
+const map = L.map("map", {
+  center: MAP_CENTER,
+  zoom:   MAP_ZOOM,
+  zoomControl: true
+});
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+  maxZoom: 19
+}).addTo(map);
+
+// ============================================================
+// STATO GLOBALE
+// ============================================================
+let geojsonLayer  = null;
+let allFeatures   = [];
+let activeLayer   = null;
+let candidatiNomi = {};
+
+// Mappa sezione → layer per zoom/highlight rapido
+const sezToLayers = {};
+
+// ============================================================
+// FUNZIONI POPUP
+// ============================================================
+function codiceLabel(codice) {
+  const map = {
+    T: "tutti i civici", CD: "civici dispari", CP: "civici pari",
+    CS: "senza numero",  LX: "lotti",          PX: "palazzine",
+    CQ: "progressivi",   K:  "chilometri"
+  };
+  return map[codice] || codice;
+}
+
+function buildPopup(props) {
+  const civici = props.da && props.a && props.a !== props.da
+    ? `Civici ${props.da}–${props.a} (${codiceLabel(props.codice)})`
+    : props.codice ? codiceLabel(props.codice) : "";
+
+  let candidatiHtml = "";
+  if (props.candidati && props.candidati.length > 0) {
+    candidatiHtml = `
+      <div class="candidati-title">Top preferenze in questa sezione</div>
+      ${props.candidati.map(c => `
+        <div class="candidato-row">
+          <span class="candidato-nome">${c.nome}</span>
+          <span class="candidato-pref">${c.pref}</span>
+        </div>
+      `).join("")}`;
+  } else {
+    candidatiHtml = `<div class="no-cand">Dati preferenze non disponibili</div>`;
+  }
+
+  return `
+    <div class="popup-header">
+      <div class="sezione-num">Sezione ${props.sezione}</div>
+      <div class="via-name">${props.via}</div>
+      ${civici ? `<div class="civici-range">${civici}</div>` : ""}
+    </div>
+    <div class="popup-body">
+      <div class="voti-main">
+        <div class="voti-num">${props.voti_l5 ?? 0}</div>
+        <div class="voti-label">
+          <strong>PD — Lista 5</strong>
+          voti in questa sezione
+        </div>
+      </div>
+      ${candidatiHtml}
+    </div>`;
+}
+
+// ============================================================
+// STILE LINEE
+// ============================================================
+function styleFeature(feature) {
+  return {
+    color:   feature.properties.colore || "#006d2c",
+    weight:  WEIGHT_NORM,
+    opacity: 0.85,
+  };
+}
+
+function highlightFeature(layer) {
+  layer.setStyle({ weight: WEIGHT_SEL, opacity: 1 });
+  layer.bringToFront();
+}
+
+function resetHighlight(layer) {
+  if (geojsonLayer) geojsonLayer.resetStyle(layer);
+}
+
+// ============================================================
+// CARICAMENTO DATI
+// ============================================================
+async function loadData() {
+  setLoading("Caricamento GeoJSON…");
+
+  // Carica candidati (per il selettore)
+  try {
+    const r = await fetch(CANDIDATI_URL);
+    const cdata = await r.json();
+    candidatiNomi = cdata.nomi || {};
+    populateCandidatiSelect(candidatiNomi);
+  } catch (e) {
+    console.warn("Candidati non disponibili:", e);
+  }
+
+  // Carica GeoJSON principale
+  let geojson;
+  try {
+    const r = await fetch(GEOJSON_URL);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    geojson = await r.json();
+  } catch (e) {
+    setLoading("❌ Errore caricamento dati. Verifica che il file data/mappa_elettorale.geojson esista.");
+    return;
+  }
+
+  allFeatures = geojson.features || [];
+
+  // Statistiche header
+  const sezioniUniche = new Set(allFeatures.map(f => f.properties.sezione)).size;
+  const votiTotali    = [...new Set(allFeatures.map(f => f.properties.sezione))]
+    .reduce((acc, s) => {
+      const feat = allFeatures.find(f => f.properties.sezione === s);
+      return acc + (feat?.properties?.voti_l5 ?? 0);
+    }, 0);
+
+  document.getElementById("stat-sezioni").textContent = sezioniUniche.toLocaleString("it");
+  document.getElementById("stat-strade").textContent  = allFeatures.length.toLocaleString("it");
+  document.getElementById("stat-voti").textContent    = votiTotali.toLocaleString("it");
+
+  setLoading("Rendering mappa…");
+
+  // Crea layer GeoJSON
+  geojsonLayer = L.geoJSON(geojson, {
+    style: styleFeature,
+    onEachFeature(feature, layer) {
+      const sez = feature.properties.sezione;
+
+      // Indice per ricerca sezione
+      if (!sezToLayers[sez]) sezToLayers[sez] = [];
+      sezToLayers[sez].push(layer);
+
+      // Popup
+      layer.bindPopup(buildPopup(feature.properties), {
+        maxWidth: 300,
+        className: "custom-popup"
+      });
+
+      layer.on({
+        mouseover(e) { highlightFeature(e.target); },
+        mouseout(e)  { resetHighlight(e.target); },
+        click(e) {
+          activeLayer = e.target;
+          highlightFeature(activeLayer);
+        }
+      });
+    }
+  }).addTo(map);
+
+  // Legenda
+  addLegend(geojson.properties);
+
+  hideLoading();
+}
+
+// ============================================================
+// LEGENDA
+// ============================================================
+function addLegend(props) {
+  const legend = L.control({ position: "bottomright" });
+  legend.onAdd = () => {
+    const div = L.DomUtil.create("div", "legend");
+    const scala = props?.scala_colori || {};
+    const vMin  = scala.basso?.voti ?? 0;
+    const vMax  = scala.alto?.voti  ?? "?";
+
+    div.innerHTML = `
+      <h4>Voti PD per sezione</h4>
+      <div class="legend-gradient"></div>
+      <div class="legend-labels">
+        <span>${vMin} voti</span>
+        <span>${vMax} voti</span>
+      </div>
+      <div class="legend-section">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#006d2c"></div>
+          <span>Sezione forte PD</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#c7e9c0"></div>
+          <span>Sezione debole PD</span>
+        </div>
+      </div>`;
+    return div;
+  };
+  legend.addTo(map);
+}
+
+// ============================================================
+// SELECT CANDIDATI
+// ============================================================
+function populateCandidatiSelect(nomi) {
+  const sel = document.getElementById("cand-filter");
+  // Ordina per numero candidato
+  const sorted = Object.entries(nomi).sort((a, b) => Number(a[0]) - Number(b[0]));
+  sorted.forEach(([num, nome]) => {
+    const opt = document.createElement("option");
+    opt.value = num;
+    opt.textContent = nome;
+    sel.appendChild(opt);
+  });
+}
+
+// Quando si seleziona un candidato, ricalcola colori basati
+// sulle sue preferenze invece dei voti di lista
+document.getElementById("cand-filter").addEventListener("change", function () {
+  const candNum = this.value;
+  if (!geojsonLayer) return;
+
+  if (!candNum) {
+    // Ripristina colori originali
+    geojsonLayer.eachLayer(layer => {
+      geojsonLayer.resetStyle(layer);
+    });
+    document.querySelector(".legend h4").textContent = "Voti PD per sezione";
+    return;
+  }
+
+  // Calcola max preferenze per normalizzare
+  let maxPref = 0;
+  allFeatures.forEach(f => {
+    const cands = f.properties.candidati || [];
+    const found = cands.find(c => String(c.num) === candNum || c.nome === candidatiNomi[candNum]);
+    if (found) maxPref = Math.max(maxPref, found.pref || 0);
+  });
+  // Alternativa: cerca nelle preferenze per nome
+  const nome = candidatiNomi[candNum] || "";
+
+  geojsonLayer.eachLayer(layer => {
+    const cands = layer.feature.properties.candidati || [];
+    const found = cands.find(c => c.nome === nome);
+    const pref  = found ? found.pref : 0;
+    const t     = maxPref > 0 ? pref / maxPref : 0;
+    const r = Math.round(199 + t * (0   - 199));
+    const g = Math.round(233 + t * (109 - 233));
+    const b = Math.round(192 + t * (44  - 192));
+    layer.setStyle({
+      color:   `rgb(${r},${g},${b})`,
+      weight:  pref > 0 ? WEIGHT_NORM + 1 : WEIGHT_NORM,
+      opacity: pref > 0 ? 1 : 0.4
+    });
+  });
+
+  const nomeBreve = nome.split(" ").slice(0, 2).join(" ");
+  document.querySelector(".legend h4").textContent = `Preferenze: ${nomeBreve}`;
+});
+
+// ============================================================
+// RICERCA SEZIONE
+// ============================================================
+document.getElementById("search-sez").addEventListener("input", function () {
+  const val = this.value.trim();
+  const res = document.getElementById("search-result");
+
+  if (!val || isNaN(Number(val))) {
+    res.textContent = "";
+    return;
+  }
+
+  const sez = Number(val);
+  const layers = sezToLayers[sez];
+
+  if (!layers || layers.length === 0) {
+    res.textContent = "non trovata";
+    return;
+  }
+
+  // Zoom sulla sezione
+  const group = L.featureGroup(layers);
+  map.fitBounds(group.getBounds().pad(0.3));
+
+  // Flash highlight
+  layers.forEach(l => highlightFeature(l));
+  setTimeout(() => layers.forEach(l => resetHighlight(l)), 1500);
+
+  res.textContent = `${layers.length} strade`;
+});
+
+// ============================================================
+// HELPER LOADING
+// ============================================================
+function setLoading(msg) {
+  document.getElementById("loading").style.display = "flex";
+  document.getElementById("loading-msg").textContent = msg;
+}
+
+function hideLoading() {
+  document.getElementById("loading").style.display = "none";
+}
+
+// ============================================================
+// AVVIO
+// ============================================================
+loadData();
+</script>
+</body>
+</html>
